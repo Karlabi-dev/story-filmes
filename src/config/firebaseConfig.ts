@@ -3,6 +3,11 @@ import {
   getFirestore
 } from 'firebase/firestore';
 
+import {
+  getAuth
+} from 'firebase/auth';
+
+
 const firebaseConfig = {
   apiKey: "AIzaSyBwgRATXdPsas44Wta1HsmJnqgfnYJ-C9s",
   authDomain: "story-filmes.firebaseapp.com",
@@ -19,3 +24,7 @@ const app = initializeApp(
 
 export const db =
   getFirestore(app);
+
+
+export const auth =
+  getAuth(app);

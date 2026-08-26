@@ -11,6 +11,8 @@ import {
 
 import { router } from 'expo-router';
 
+import { useAuth } from '../contexts/AuthContext';
+
 import { Filme } from '../contexts/CartContext';
 
 
@@ -21,6 +23,25 @@ export default function HomeScreen() {
   const [carregando, setCarregando] = useState(true);
 
   const [erro, setErro] = useState<string | null>(null);
+
+  const { usuario, sair } = useAuth();
+
+  async function fazerLogout() {
+
+  try {
+
+    await sair();
+
+  } catch (error) {
+
+    console.log(
+      'Erro ao sair:',
+      error
+    );
+
+  }
+
+}
 
 
   async function buscarFilmes() {
