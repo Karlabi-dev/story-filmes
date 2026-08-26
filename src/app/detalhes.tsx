@@ -18,14 +18,12 @@ import {
   useLocalSearchParams
 } from 'expo-router';
 
-import {
-  Filme
-} from '../contexts/CartContext';
+import { Filme } from '../contexts/CartContext';
 
 import {
-  adicionarAoCarrinho,
-  buscarCarrinho
-} from '../services/api';
+  adicionarFilme,
+  filmeJaExiste
+} from '../services/firestore';
 
 
 export default function DetalhesScreen() {
@@ -35,48 +33,40 @@ export default function DetalhesScreen() {
 
 
   const filme: Filme = {
-
     id: params.id,
-
     titulo: params.titulo,
-
     ano: params.ano,
-
     genero: params.genero,
-
     descricao: params.descricao,
-
   };
 
 
+  // false = não está na lista
+  // true = já está na lista
   const [adicionado, setAdicionado] =
     useState(false);
 
 
-  const [salvando, setSalvando] =
-    useState(false);
-
-
+  // Usado enquanto estamos verificando o Firestore
   const [verificando, setVerificando] =
     useState(true);
 
 
-  async function verificarSeEstaNaLista() {
+  // Usado enquanto estamos adicionando
+  const [salvando, setSalvando] =
+    useState(false);
+
+
+  // Verifica no Firestore se o filme já existe
+  async function verificarFilme() {
 
     try {
 
       setVerificando(true);
 
 
-      const itens =
-        await buscarCarrinho();
-
-
       const existe =
-        itens.some(
-          (item: any) =>
-            item.filme_id === filme.id
-        );
+        await filmeJaExiste(filme.id);
 
 
       setAdicionado(existe);
@@ -99,11 +89,12 @@ export default function DetalhesScreen() {
   }
 
 
+  // Executa toda vez que voltamos para essa tela
   useFocusEffect(
 
     useCallback(() => {
 
-      verificarSeEstaNaLista();
+      verificarFilme();
 
     }, [filme.id])
 
@@ -112,16 +103,23 @@ export default function DetalhesScreen() {
 
   async function salvarFilme() {
 
+    // Segurança extra:
+    // se já estiver adicionado, não faz nada
+    if (adicionado) {
+      return;
+    }
+
+
     try {
 
       setSalvando(true);
 
 
-      await adicionarAoCarrinho(
-        filme
-      );
+      await adicionarFilme(filme);
 
 
+      // Depois de adicionar,
+      // muda o estado imediatamente
       setAdicionado(true);
 
 
@@ -187,15 +185,15 @@ export default function DetalhesScreen() {
       </Text>
 
 
+      {/* BOTÃO ADICIONAR */}
+
       <TouchableOpacity
 
         style={[
           styles.botao,
 
-          (adicionado ||
-            salvando ||
-            verificando) &&
-            styles.botaoDesabilitado
+          adicionado &&
+            styles.botaoAdicionado
         ]}
 
         onPress={salvarFilme}
@@ -218,8 +216,8 @@ export default function DetalhesScreen() {
           <Text style={styles.textoBotao}>
 
             {adicionado
-              ? 'Já está na lista'
-              : 'Adicionar à lista'}
+              ? 'Filme adicionado'
+              : 'Adicionar à minha lista'}
 
           </Text>
 
@@ -227,6 +225,8 @@ export default function DetalhesScreen() {
 
       </TouchableOpacity>
 
+
+      {/* BOTÃO VER LISTA */}
 
       <TouchableOpacity
 
@@ -282,6 +282,8 @@ const styles = StyleSheet.create({
     marginBottom: 30
   },
 
+
+  // VERDE
   botao: {
     backgroundColor: '#16a34a',
     padding: 15,
@@ -289,15 +291,19 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
 
-  botaoDesabilitado: {
+
+  // CINZA
+  botaoAdicionado: {
     backgroundColor: '#94a3b8'
   },
+
 
   textoBotao: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold'
   },
+
 
   botaoSecundario: {
     marginTop: 12,
@@ -308,10 +314,11 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
 
+
   textoBotaoSecundario: {
     color: '#1d4ed8',
     fontSize: 16,
     fontWeight: 'bold'
-  },
+  }
 
 });

@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState
+} from 'react';
 
 import {
   ActivityIndicator,
@@ -11,11 +14,11 @@ import {
 } from 'react-native';
 
 import {
-  ItemCarrinho,
-  buscarCarrinho,
-  removerDoCarrinho,
-  alterarStatus
-} from '../services/api';
+  alterarStatusFilme,
+  FilmeFirestore,
+  observarFilmes,
+  removerFilme
+} from '../services/firestore';
 
 
 const STATUS = [
@@ -27,68 +30,50 @@ const STATUS = [
 
 export default function CarrinhoScreen() {
 
-  const [itens, setItens] =
-    useState<ItemCarrinho[]>([]);
+  const [filmes, setFilmes] =
+    useState<FilmeFirestore[]>([]);
 
   const [carregando, setCarregando] =
     useState(true);
 
-  const [erro, setErro] =
+  const [menuAberto, setMenuAberto] =
     useState<string | null>(null);
 
-  // Guarda o ID do filme que está
-  // com o combobox aberto
-  const [menuAberto, setMenuAberto] =
-    useState<number | null>(null);
+
+  useEffect(() => {
+
+    const pararDeObservar =
+      observarFilmes((dados) => {
+
+        setFilmes(dados);
+
+        setCarregando(false);
+
+      });
 
 
-  async function carregarCarrinho() {
+    return () => {
 
-    try {
+      pararDeObservar();
 
-      setCarregando(true);
+    };
 
-      setErro(null);
-
-      const dados = await buscarCarrinho();
-
-      setItens(dados);
-
-    } catch (error) {
-
-      console.log(error);
-
-      setErro(
-        'Não foi possível carregar os filmes.'
-      );
-
-    } finally {
-
-      setCarregando(false);
-
-    }
-
-  }
+  }, []);
 
 
   async function escolherStatus(
-    id: number,
+    id: string,
     novoStatus: string
   ) {
 
     try {
 
-      // Fecha o combobox
       setMenuAberto(null);
 
-      // Faz o PUT
-      await alterarStatus(
+      await alterarStatusFilme(
         id,
         novoStatus
       );
-
-      // Busca novamente os filmes
-      await carregarCarrinho();
 
     } catch (error) {
 
@@ -104,13 +89,13 @@ export default function CarrinhoScreen() {
   }
 
 
-  async function remover(id: number) {
+  async function remover(
+    id: string
+  ) {
 
     try {
 
-      await removerDoCarrinho(id);
-
-      await carregarCarrinho();
+      await removerFilme(id);
 
     } catch (error) {
 
@@ -126,52 +111,19 @@ export default function CarrinhoScreen() {
   }
 
 
-  useEffect(() => {
-
-    carregarCarrinho();
-
-  }, []);
-
-
   if (carregando) {
 
     return (
 
       <View style={styles.centro}>
 
-        <ActivityIndicator size="large" />
+        <ActivityIndicator
+          size="large"
+        />
 
         <Text style={styles.mensagem}>
-          Carregando filmes...
+          Carregando minha lista...
         </Text>
-
-      </View>
-
-    );
-
-  }
-
-
-  if (erro) {
-
-    return (
-
-      <View style={styles.centro}>
-
-        <Text style={styles.erro}>
-          {erro}
-        </Text>
-
-        <TouchableOpacity
-          style={styles.botaoRecarregar}
-          onPress={carregarCarrinho}
-        >
-
-          <Text style={styles.textoBotao}>
-            Tentar novamente
-          </Text>
-
-        </TouchableOpacity>
 
       </View>
 
@@ -191,16 +143,16 @@ export default function CarrinhoScreen() {
 
       <FlatList
 
-        data={itens}
+        data={filmes}
 
         keyExtractor={(item) =>
-          String(item.id)
+          item.id!
         }
 
         ListEmptyComponent={
 
           <Text style={styles.vazio}>
-            Nenhum filme foi adicionado.
+            Nenhum filme na lista.
           </Text>
 
         }
@@ -244,7 +196,9 @@ export default function CarrinhoScreen() {
 
                   } else {
 
-                    setMenuAberto(item.id);
+                    setMenuAberto(
+                      item.id!
+                    );
 
                   }
 
@@ -262,47 +216,51 @@ export default function CarrinhoScreen() {
               </TouchableOpacity>
 
 
-              {/* OPÇÕES DO COMBOBOX */}
+              {/* OPÇÕES */}
 
               {aberto && (
 
                 <View style={styles.opcoes}>
 
-                  {STATUS.map((status) => (
+                  {STATUS.map(
+                    (status) => (
 
-                    <TouchableOpacity
+                      <TouchableOpacity
 
-                      key={status}
+                        key={status}
 
-                      style={styles.opcao}
+                        style={styles.opcao}
 
-                      onPress={() =>
-                        escolherStatus(
-                          item.id,
-                          status
-                        )
-                      }
-                    >
+                        onPress={() =>
+                          escolherStatus(
+                            item.id!,
+                            status
+                          )
+                        }
+                      >
 
-                      <Text style={styles.opcaoTexto}>
-                        {status}
-                      </Text>
+                        <Text style={styles.opcaoTexto}>
+                          {status}
+                        </Text>
 
-                    </TouchableOpacity>
+                      </TouchableOpacity>
 
-                  ))}
+                    )
+                  )}
 
                 </View>
 
               )}
 
 
+              {/* DELETE */}
+
               <TouchableOpacity
 
                 style={styles.botaoRemover}
 
                 onPress={() =>
-                  remover(item.id)
+                  remover(item.id!)
                 }
               >
 
@@ -338,8 +296,7 @@ const styles = StyleSheet.create({
   centro: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20
+    alignItems: 'center'
   },
 
   titulo: {
@@ -357,14 +314,14 @@ const styles = StyleSheet.create({
 
   item: {
     backgroundColor: '#fff',
-    padding: 16,
+    padding: 18,
     marginBottom: 15,
     borderRadius: 10,
     elevation: 2
   },
 
   itemTitulo: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: 'bold'
   },
 
@@ -428,23 +385,6 @@ const styles = StyleSheet.create({
   mensagem: {
     marginTop: 15,
     fontSize: 16
-  },
-
-  erro: {
-    fontSize: 17,
-    marginBottom: 15
-  },
-
-  botaoRecarregar: {
-    backgroundColor: '#1d4ed8',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8
-  },
-
-  textoBotao: {
-    color: '#fff',
-    fontWeight: 'bold'
-  },
+  }
 
 });
