@@ -45,7 +45,7 @@ export async function adicionarFilme(
     );
 
   }
-
+  
   const referencia = collection(
     db,
     'minhaLista'
