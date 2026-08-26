@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000";
+const API_URL = "https://story-filmes-api.onrender.com";
 
 
 export type ItemCarrinho = {
@@ -15,7 +15,7 @@ export type ItemCarrinho = {
 
   descricao: string;
 
-  quantidade: number;
+  status: string;
 
 };
 
@@ -116,9 +116,9 @@ export async function removerDoCarrinho(
 }
 
 
-export async function alterarQuantidade(
+export async function alterarStatus(
   id: number,
-  quantidade: number
+  status: string
 ) {
 
   const resposta = await fetch(
@@ -132,7 +132,7 @@ export async function alterarQuantidade(
       },
 
       body: JSON.stringify({
-        quantidade
+        status
       })
 
     }
@@ -142,7 +142,7 @@ export async function alterarQuantidade(
   if (!resposta.ok) {
 
     throw new Error(
-      "Erro ao alterar quantidade"
+      "Erro ao alterar status"
     );
 
   }
