@@ -10,62 +10,94 @@ import {
 } from 'react-native';
 
 import { router } from 'expo-router';
-import { Filme, useCart } from '../contexts/CartContext';
+
+import { Filme } from '../contexts/CartContext';
+
 
 export default function HomeScreen() {
 
-  const { itens } = useCart();
   const [filmes, setFilmes] = useState<Filme[]>([]);
+
   const [carregando, setCarregando] = useState(true);
+
   const [erro, setErro] = useState<string | null>(null);
+
 
   async function buscarFilmes() {
 
     try {
+
       setCarregando(true);
+
       setErro(null);
+
 
       const resposta = await fetch(
         'https://api.tvmaze.com/shows'
       );
+
+
       if (!resposta.ok) {
-        throw new Error('Erro ao buscar filmes');
+
+        throw new Error(
+          'Erro ao buscar filmes'
+        );
+
       }
 
+
       const dados = await resposta.json();
-      const filmesFormatados: Filme[] = dados.map((item: any) => ({
-        id: String(item.id),
 
-        titulo: item.name,
 
-        ano: item.premiered
-          ? item.premiered.substring(0, 4)
-          : 'Sem ano',
+      const filmesFormatados: Filme[] =
+        dados.map((item: any) => ({
 
-        genero: item.genres.length > 0
-          ? item.genres.join(', ')
-          : 'Sem gênero',
+          id: String(item.id),
 
-        descricao: item.summary
-          ? item.summary.replace(/<[^>]*>/g, '')
-          : 'Sem descrição',
-      }));
+          titulo: item.name,
+
+          ano: item.premiered
+            ? item.premiered.substring(0, 4)
+            : 'Sem ano',
+
+          genero: item.genres.length > 0
+            ? item.genres.join(', ')
+            : 'Sem gênero',
+
+          descricao: item.summary
+            ? item.summary.replace(/<[^>]*>/g, '')
+            : 'Sem descrição',
+
+        }));
+
+
       setFilmes(filmesFormatados);
+
+
     } catch (error) {
-      console.log(error)
-      setErro('Não foi possível carregar os filmes.');
+
+      console.log(error);
+
+      setErro(
+        'Não foi possível carregar os filmes.'
+      );
+
 
     } finally {
+
       setCarregando(false);
 
     }
 
   }
 
+
   useEffect(() => {
+
     buscarFilmes();
 
   }, []);
+
 
   function abrirDetalhes(item: Filme) {
 
@@ -75,95 +107,140 @@ export default function HomeScreen() {
     });
 
   }
+
+
   if (carregando) {
 
     return (
+
       <View style={styles.centro}>
+
         <ActivityIndicator
           size="large"
         />
+
         <Text style={styles.mensagem}>
           Carregando filmes...
         </Text>
 
       </View>
+
     );
+
   }
+
 
   if (erro) {
 
     return (
+
       <View style={styles.centro}>
 
         <Text style={styles.erro}>
           {erro}
         </Text>
+
+
         <TouchableOpacity
           style={styles.botaoRecarregar}
           onPress={buscarFilmes}
         >
+
           <Text style={styles.textoBotaoRecarregar}>
             Recarregar
           </Text>
 
         </TouchableOpacity>
+
       </View>
+
     );
+
   }
 
+
   return (
+
     <View style={styles.container}>
+
       <View style={styles.cabecalho}>
 
         <Text style={styles.titulo}>
           🎬 Lista de Filmes
         </Text>
+
+
         <View style={styles.botoesCabecalho}>
+
           <TouchableOpacity
             style={styles.botaoRecarregar}
             onPress={buscarFilmes}
           >
+
             <Text style={styles.textoBotaoRecarregar}>
               Recarregar
             </Text>
 
           </TouchableOpacity>
+
+
           <TouchableOpacity
-            style={styles.botaoCarrinho}
-            onPress={() => router.push('/carrinho')}
+            style={styles.botaoMinhaLista}
+            onPress={() =>
+              router.push('/carrinho')
+            }
           >
-            <Text style={styles.textoBotaoCarrinho}>
-              Carrinho ({itens.length})
+
+            <Text style={styles.textoBotaoMinhaLista}>
+              Minha Lista
             </Text>
 
           </TouchableOpacity>
+
         </View>
+
       </View>
 
+
       <FlatList
+
         data={filmes}
-        keyExtractor={(item) => item.id}
+
+        keyExtractor={(item) =>
+          item.id
+        }
+
         renderItem={({ item }) => (
 
           <TouchableOpacity
             style={styles.item}
-            onPress={() => abrirDetalhes(item)}
+            onPress={() =>
+              abrirDetalhes(item)
+            }
           >
+
             <Text style={styles.itemTitulo}>
               {item.titulo}
             </Text>
+
 
             <Text style={styles.itemInfo}>
               {item.ano} • {item.genero}
             </Text>
 
           </TouchableOpacity>
+
         )}
+
       />
+
     </View>
+
   );
 
 }
+
+
 const styles = StyleSheet.create({
 
   container: {
@@ -194,14 +271,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
 
-  botaoCarrinho: {
+  botaoMinhaLista: {
     backgroundColor: '#1d4ed8',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
   },
 
-  textoBotaoCarrinho: {
+  textoBotaoMinhaLista: {
     color: '#fff',
     fontWeight: 'bold',
   },

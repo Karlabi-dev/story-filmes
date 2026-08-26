@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, {
+  useCallback,
+  useState
+} from 'react';
 
 import {
   ActivityIndicator,
@@ -11,16 +14,17 @@ import {
 
 import {
   router,
+  useFocusEffect,
   useLocalSearchParams
 } from 'expo-router';
 
 import {
-  Filme,
-  useCart
+  Filme
 } from '../contexts/CartContext';
 
 import {
-  adicionarAoCarrinho
+  adicionarAoCarrinho,
+  buscarCarrinho
 } from '../services/api';
 
 
@@ -29,27 +33,81 @@ export default function DetalhesScreen() {
   const params =
     useLocalSearchParams<Record<keyof Filme, string>>();
 
-  const {
-    adicionarItem,
-    estaNoCarrinho
-  } = useCart();
+
+  const filme: Filme = {
+
+    id: params.id,
+
+    titulo: params.titulo,
+
+    ano: params.ano,
+
+    genero: params.genero,
+
+    descricao: params.descricao,
+
+  };
+
+
+  const [adicionado, setAdicionado] =
+    useState(false);
 
 
   const [salvando, setSalvando] =
     useState(false);
 
 
-  const filme: Filme = {
-    id: params.id,
-    titulo: params.titulo,
-    ano: params.ano,
-    genero: params.genero,
-    descricao: params.descricao,
-  };
+  const [verificando, setVerificando] =
+    useState(true);
 
 
-  const adicionado =
-    estaNoCarrinho(filme.id);
+  async function verificarSeEstaNaLista() {
+
+    try {
+
+      setVerificando(true);
+
+
+      const itens =
+        await buscarCarrinho();
+
+
+      const existe =
+        itens.some(
+          (item: any) =>
+            item.filme_id === filme.id
+        );
+
+
+      setAdicionado(existe);
+
+
+    } catch (error) {
+
+      console.log(
+        'Erro ao verificar filme:',
+        error
+      );
+
+
+    } finally {
+
+      setVerificando(false);
+
+    }
+
+  }
+
+
+  useFocusEffect(
+
+    useCallback(() => {
+
+      verificarSeEstaNaLista();
+
+    }, [filme.id])
+
+  );
 
 
   async function salvarFilme() {
@@ -59,26 +117,24 @@ export default function DetalhesScreen() {
       setSalvando(true);
 
 
-      // 1. Envia para nossa API
-      // 2. Express recebe
-      // 3. Express salva no Neon
-
-      await adicionarAoCarrinho(filme);
+      await adicionarAoCarrinho(
+        filme
+      );
 
 
-      // Mantemos seu Context funcionando
-      adicionarItem(filme);
+      setAdicionado(true);
 
 
       Alert.alert(
         'Pronto!',
-        `${filme.titulo} foi adicionado ao carrinho.`
+        `${filme.titulo} foi adicionado à sua lista.`
       );
 
 
     } catch (error) {
 
       console.log(error);
+
 
       Alert.alert(
         'Erro',
@@ -136,26 +192,34 @@ export default function DetalhesScreen() {
         style={[
           styles.botao,
 
-          (adicionado || salvando) &&
-          styles.botaoDesabilitado
+          (adicionado ||
+            salvando ||
+            verificando) &&
+            styles.botaoDesabilitado
         ]}
 
         onPress={salvarFilme}
 
-        disabled={adicionado || salvando}
+        disabled={
+          adicionado ||
+          salvando ||
+          verificando
+        }
       >
 
-        {salvando ? (
+        {salvando || verificando ? (
 
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator
+            color="#fff"
+          />
 
         ) : (
 
           <Text style={styles.textoBotao}>
 
             {adicionado
-              ? 'Já está no carrinho'
-              : 'Adicionar'}
+              ? 'Já está na lista'
+              : 'Adicionar à lista'}
 
           </Text>
 
@@ -176,7 +240,7 @@ export default function DetalhesScreen() {
         <Text
           style={styles.textoBotaoSecundario}
         >
-          Ver carrinho
+          Ver minha lista
         </Text>
 
       </TouchableOpacity>
