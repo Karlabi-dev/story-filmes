@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -7,273 +7,157 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { router } from 'expo-router';
-
-import { useAuth } from '../contexts/AuthContext';
-
-import { Filme } from '../contexts/CartContext';
-
+import { router } from "expo-router";
+import { Filme } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function HomeScreen() {
-
-  const [filmes, setFilmes] = useState<Filme[]>([]);
-
-  const [carregando, setCarregando] = useState(true);
-
-  const [erro, setErro] = useState<string | null>(null);
-
   const { usuario, sair } = useAuth();
 
-  async function fazerLogout() {
-
-  try {
-
-    await sair();
-
-  } catch (error) {
-
-    console.log(
-      'Erro ao sair:',
-      error
-    );
-
-  }
-
-}
-
+  const [filmes, setFilmes] = useState<Filme[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
   async function buscarFilmes() {
-
     try {
-
       setCarregando(true);
 
       setErro(null);
 
-
-      const resposta = await fetch(
-        'https://api.tvmaze.com/shows'
-      );
-
+      const resposta = await fetch("https://api.tvmaze.com/shows");
 
       if (!resposta.ok) {
-
-        throw new Error(
-          'Erro ao buscar filmes'
-        );
-
+        throw new Error("Erro ao buscar filmes");
       }
-
 
       const dados = await resposta.json();
 
+      const filmesFormatados: Filme[] = dados.map((item: any) => ({
+        id: String(item.id),
 
-      const filmesFormatados: Filme[] =
-        dados.map((item: any) => ({
+        titulo: item.name,
 
-          id: String(item.id),
+        ano: item.premiered ? item.premiered.substring(0, 4) : "Sem ano",
 
-          titulo: item.name,
+        genero: item.genres.length > 0 ? item.genres.join(", ") : "Sem gênero",
 
-          ano: item.premiered
-            ? item.premiered.substring(0, 4)
-            : 'Sem ano',
-
-          genero: item.genres.length > 0
-            ? item.genres.join(', ')
-            : 'Sem gênero',
-
-          descricao: item.summary
-            ? item.summary.replace(/<[^>]*>/g, '')
-            : 'Sem descrição',
-
-        }));
-
+        descricao: item.summary
+          ? item.summary.replace(/<[^>]*>/g, "")
+          : "Sem descrição",
+      }));
 
       setFilmes(filmesFormatados);
-
-
     } catch (error) {
+      console.log("Erro ao buscar filmes:", error);
 
-      console.log(error);
-
-      setErro(
-        'Não foi possível carregar os filmes.'
-      );
-
-
+      setErro("Não foi possível carregar os filmes.");
     } finally {
-
       setCarregando(false);
-
     }
-
   }
-
 
   useEffect(() => {
-
     buscarFilmes();
-
   }, []);
 
-
   function abrirDetalhes(item: Filme) {
-
     router.push({
-      pathname: '/detalhes',
+      pathname: "/detalhes",
+
       params: item,
     });
-
   }
 
+  async function fazerLogout() {
+    try {
+      await sair();
+    } catch (error) {
+      console.log("Erro ao sair:", error);
+    }
+  }
 
   if (carregando) {
-
     return (
-
       <View style={styles.centro}>
+        <ActivityIndicator size="large" />
 
-        <ActivityIndicator
-          size="large"
-        />
-
-        <Text style={styles.mensagem}>
-          Carregando filmes...
-        </Text>
-
+        <Text style={styles.mensagem}>Carregando filmes...</Text>
       </View>
-
     );
-
   }
-
 
   if (erro) {
-
     return (
-
       <View style={styles.centro}>
+        <Text style={styles.erro}>{erro}</Text>
 
-        <Text style={styles.erro}>
-          {erro}
-        </Text>
-
-
-        <TouchableOpacity
-          style={styles.botaoRecarregar}
-          onPress={buscarFilmes}
-        >
-
-          <Text style={styles.textoBotaoRecarregar}>
-            Recarregar
-          </Text>
-
+        <TouchableOpacity style={styles.botaoRecarregar} onPress={buscarFilmes}>
+          <Text style={styles.textoBotaoRecarregar}>Recarregar</Text>
         </TouchableOpacity>
-
       </View>
-
     );
-
   }
 
-
   return (
-
     <View style={styles.container}>
-
       <View style={styles.cabecalho}>
-
-        <Text style={styles.titulo}>
-          🎬 Lista de Filmes
-        </Text>
-
-
+        <Text style={styles.titulo}>🎬 Lista de Filmes</Text>
+        <Text style={styles.usuario}>Logado como: {usuario?.email}</Text>
         <View style={styles.botoesCabecalho}>
-
           <TouchableOpacity
             style={styles.botaoRecarregar}
             onPress={buscarFilmes}
           >
-
-            <Text style={styles.textoBotaoRecarregar}>
-              Recarregar
-            </Text>
-
+            <Text style={styles.textoBotaoRecarregar}>Recarregar</Text>
           </TouchableOpacity>
-
 
           <TouchableOpacity
             style={styles.botaoMinhaLista}
-            onPress={() =>
-              router.push('/carrinho')
-            }
+            onPress={() => router.push("/carrinho")}
           >
-
-            <Text style={styles.textoBotaoMinhaLista}>
-              Minha Lista
-            </Text>
-
+            <Text style={styles.textoBotaoMinhaLista}>Minha Lista</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.botaoSair} onPress={fazerLogout}>
+            <Text style={styles.textoBotaoSair}>Sair</Text>
+          </TouchableOpacity>
         </View>
-
       </View>
 
-
       <FlatList
-
         data={filmes}
-
-        keyExtractor={(item) =>
-          item.id
-        }
-
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-
           <TouchableOpacity
             style={styles.item}
-            onPress={() =>
-              abrirDetalhes(item)
-            }
+            onPress={() => abrirDetalhes(item)}
           >
-
-            <Text style={styles.itemTitulo}>
-              {item.titulo}
-            </Text>
-
-
+            <Text style={styles.itemTitulo}>{item.titulo}</Text>
             <Text style={styles.itemInfo}>
-              {item.ano} • {item.genero}
+              {item.ano}
+              {" • "}
+              {item.genero}
             </Text>
-
           </TouchableOpacity>
-
         )}
-
       />
-
     </View>
-
   );
-
 }
 
-
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
 
   centro: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
 
@@ -283,41 +167,61 @@ const styles = StyleSheet.create({
 
   titulo: {
     fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+
+  usuario: {
+    fontSize: 14,
+    color: "#64748b",
+    marginBottom: 15,
   },
 
   botoesCabecalho: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
-  },
-
-  botaoMinhaLista: {
-    backgroundColor: '#1d4ed8',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-
-  textoBotaoMinhaLista: {
-    color: '#fff',
-    fontWeight: 'bold',
+    flexWrap: "wrap",
   },
 
   botaoRecarregar: {
-    backgroundColor: '#444',
+    backgroundColor: "#444",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
   },
 
   textoBotaoRecarregar: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
+  },
+
+
+  botaoMinhaLista: {
+    backgroundColor: "#1d4ed8",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+
+  textoBotaoMinhaLista: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+
+  botaoSair: {
+    backgroundColor: "#dc2626",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+
+  textoBotaoSair: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 
   item: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
     marginBottom: 12,
     borderRadius: 10,
@@ -326,12 +230,12 @@ const styles = StyleSheet.create({
 
   itemTitulo: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 
   itemInfo: {
     marginTop: 5,
-    color: '#666',
+    color: "#666",
     fontSize: 15,
   },
 
@@ -344,5 +248,4 @@ const styles = StyleSheet.create({
     fontSize: 17,
     marginBottom: 15,
   },
-
 });
