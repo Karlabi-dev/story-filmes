@@ -1,12 +1,7 @@
-import { initializeApp } from 'firebase/app';
-import {
-  getFirestore
-} from 'firebase/firestore';
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
-import {
-  getAuth
-} from 'firebase/auth';
-
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBwgRATXdPsas44Wta1HsmJnqgfnYJ-C9s",
@@ -15,16 +10,9 @@ const firebaseConfig = {
   storageBucket: "story-filmes.firebasestorage.app",
   messagingSenderId: "453219877039",
   appId: "1:453219877039:web:dffd1c265cbcb926bd145a",
-  measurementId: "G-LMKL5TD0M7"
+  measurementId: "G-LMKL5TD0M7",
 };
 
-const app = initializeApp(
-  firebaseConfig
-);
-
-export const db =
-  getFirestore(app);
-
-
-export const auth =
-  getAuth(app);
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = getAuth(app);

@@ -1,4 +1,10 @@
-import React, { createContext, ReactNode, useContext, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 
 export type Filme = {
   id: string;
@@ -16,7 +22,6 @@ type CartContextData = {
 };
 
 const CartContext = createContext<CartContextData | undefined>(undefined);
-
 export function CartProvider({ children }: { children: ReactNode }) {
   const [itens, setItens] = useState<Filme[]>([]);
 
@@ -27,7 +32,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         : [...listaAtual, filme],
     );
   }
-
   function removerItem(id: string) {
     setItens((listaAtual) => listaAtual.filter((item) => item.id !== id));
   }
@@ -35,7 +39,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   function estaNoCarrinho(id: string) {
     return itens.some((item) => item.id === id);
   }
-
   const value = useMemo(
     () => ({ itens, adicionarItem, removerItem, estaNoCarrinho }),
     [itens],
@@ -46,9 +49,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext);
-
   if (!context) {
-    throw new Error('useCart deve ser usado dentro de CartProvider');
+    throw new Error("useCart deve ser usado dentro de CartProvider");
   }
 
   return context;
